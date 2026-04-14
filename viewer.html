@@ -197,21 +197,7 @@ function catColor(cat){
 
 // ═══ LOAD DATA ═════════════════════════════════════════════════════
 function loadData(){
-  // Prima prova localStorage (dati Admin locali)
-  var saved=null;
-  try{saved=localStorage.getItem('sca');}catch(e){}
-  if(saved){
-    try{
-      var p=JSON.parse(saved);
-      S.brands=p.brands||[];S.subgroups=p.subgroups||[];
-      S.groups=p.groups||[];S.accessories=p.accessories||[];
-      S.brand_accessories=p.brand_accessories||[];
-      if(!S.cur.brand&&S.brands.length)S.cur.brand=S.brands[0].id;
-      setConn(true,'Dati locali');
-      render();return;
-    }catch(e){}
-  }
-  // Fallback: Google Sheets
+  setConn(null,'Connessione in corso...');
   fetch(SCRIPT_URL+'?action=load')
     .then(function(r){return r.json();})
     .then(function(res){
@@ -222,16 +208,39 @@ function loadData(){
         S.accessories=res.data.accessories||[];
         S.brand_accessories=res.data.brand_accessories||[];
         if(!S.cur.brand&&S.brands.length)S.cur.brand=S.brands[0].id;
-        setConn(true,'Dati aggiornati');
+        setConn(true,'☁️ Dati aggiornati');
         render();
-      }else{setConn(false,res.error);}
+      }else{
+        showError('⚠️ '+(res.error||'Errore server'));
+      }
     })
-    .catch(function(){setConn(false,'Nessun dato disponibile');});
+    .catch(function(){
+      showError('📴 Nessuna connessione disponibile');
+    });
+}
+
+function showError(msg){
+  setConn(false,msg);
+  document.getElementById('main').innerHTML=
+    '<div style="text-align:center;padding:80px 20px">'+
+    '<div style="font-size:48px;margin-bottom:16px">📡</div>'+
+    '<div style="font-size:16px;font-weight:700;color:#0C2340;margin-bottom:8px">Impossibile caricare i dati</div>'+
+    '<div style="font-size:13px;color:#6B7F96;margin-bottom:20px">'+msg+'</div>'+
+    '<div style="font-size:12px;color:#6B7F96;background:#F2F5F9;border-radius:8px;padding:12px;max-width:400px;margin:0 auto;text-align:left">'+
+    '• Verifica la connessione internet<br>'+
+    '• Chiedi all&#39;amministratore di pubblicare i dati su Google Sheets'+
+    '</div>'+
+    '<button onclick="loadData()" style="margin-top:20px;padding:10px 24px;background:#1460B8;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">🔄 Riprova</button>'+
+    '</div>';
 }
 
 function setConn(ok,msg){
-  document.getElementById('conn-dot').style.background=ok?'#4CAF50':'#F44336';
-  document.getElementById('conn-txt').textContent=msg||(ok?'OK':'Errore');
+  var dot=document.getElementById('conn-dot');
+  var txt=document.getElementById('conn-txt');
+  if(ok===null){dot.style.background='#F5A623';dot.style.animation='pulse 0.5s infinite';}
+  else if(ok){dot.style.background='#4CAF50';dot.style.animation='pulse 2s infinite';}
+  else{dot.style.background='#F44336';dot.style.animation='none';}
+  txt.textContent=msg||(ok?'OK':'Errore');
 }
 
 // ═══ RENDER ════════════════════════════════════════════════════════
