@@ -261,7 +261,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#E8EDF5;color:var(--
 <!-- TOPBAR -->
 <div id="tb">
   <div class="logo">S<em>&</em>CURITY &nbsp;<span style="font-weight:400;opacity:.5;font-size:11px">Admin</span></div>
-  <div style="margin-left:auto;display:flex;gap:8px">
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+    <div id="cloud-status" style="font-size:11px;color:#4CA0E8;display:none;align-items:center;gap:5px">
+      <div id="cloud-dot" style="width:7px;height:7px;border-radius:50%;background:#4CAF50"></div>
+      <span id="cloud-txt"></span>
+    </div>
     <button class="btn bs bsm" id="btn-brands">🏷️ Marchi</button>
     <button class="btn bo bsm" id="btn-exp">💾 Esporta</button>
     <button class="btn bg bsm" id="btn-pub">☁️ Pubblica</button>
@@ -564,11 +568,34 @@ function init(){
       var p=JSON.parse(saved);
       S.brands=p.brands||[];S.subgroups=p.subgroups||[];
       S.groups=p.groups||[];S.accessories=p.accessories||[];
+      S.brand_accessories=p.brand_accessories||[];
       S.cur=p.cur||S.cur;
     }catch(e){loadInit(INIT);}
   }else{loadInit(INIT);}
   if(!S.cur.brand&&S.brands.length)S.cur.brand=S.brands[0].id;
-  bindStatic();render();
+  bindStatic();
+
+  // Se i dati locali sono vuoti (nuovo PC) e c'è un URL Cloud → carica automaticamente
+  var url=localStorage.getItem('sca_script_url')||'';
+  var isEmpty=!S.brands.length||
+    (S.brands.length<=1&&!S.groups.length&&!S.accessories.length&&!S.brand_accessories.length);
+  if(isEmpty&&url){
+    // Mostra schermata di caricamento e avvia sync automatico
+    document.getElementById('main').innerHTML=
+      '<div style="text-align:center;padding:80px 20px;color:var(--dg)">'+
+      '<div style="font-size:40px;margin-bottom:12px">☁️</div>'+
+      '<p style="font-size:15px;font-weight:600;color:var(--navy)">Sincronizzazione dati dal Cloud...</p>'+
+      '<p style="font-size:12px;margin-top:6px">Primo avvio su questo dispositivo</p>'+
+      '</div>';
+    loadFromCloud(
+      function(){setCloudStatus('ok','☁️ Dati Cloud');},
+      function(){render();} // fallback: mostra dati vuoti
+    );
+  } else {
+    // Dati locali presenti: mostra stato Cloud se configurato
+    if(url)setCloudStatus('ok','☁️ Locale');
+    render();
+  }
 }
 
 function loadInit(I){
@@ -1231,8 +1258,15 @@ function renderSettings(m){
     '<button class="btn bp" id="s-exp">💾 Esporta JSON</button>'+
     '<button class="btn bs" id="s-imp">📂 Importa JSON</button>'+
     '<button class="btn bg" id="s-pub">☁️ Configura & Pubblica</button>'+
+    '<button class="btn bo" id="s-load">📥 Carica da Cloud</button>'+
     '<button class="btn bd" id="s-rst">⚠️ Reset dati originali</button>'+
-    '</div></div>'+
+    '</div>'+
+    (localStorage.getItem('sca_script_url')?
+      '<div style="margin-top:10px;padding:8px;background:var(--lg);border-radius:6px;font-size:11px;color:var(--dg)">'+
+      '☁️ URL Cloud configurato</div>':
+      '<div style="margin-top:10px;padding:8px;background:#FFF3E0;border-radius:6px;font-size:11px;color:#E65100">'+
+      '⚠️ Nessun URL Cloud — configura per sincronizzare tra PC</div>')+
+    '</div>'+
     '<div class="scard"><h3 style="font-size:14px;color:var(--navy);margin-bottom:10px">🏷️ Marchi</h3>'+
     b.map(function(br){return'<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">'+
       '<div style="width:12px;height:12px;border-radius:3px;background:'+br.color+'"></div>'+
@@ -1244,6 +1278,13 @@ function renderSettings(m){
   document.getElementById('s-exp').onclick=exportData;
   document.getElementById('s-imp').onclick=function(){document.getElementById('imp-file').click();};
   document.getElementById('s-pub').onclick=openCfgModal;
+  document.getElementById('s-load').onclick=function(){
+    var url=localStorage.getItem('sca_script_url')||'';
+    if(!url){toast('Configura prima l\'URL Cloud (Configura & Pubblica)','err');return;}
+    askConfirm('Scaricare i dati dal Cloud e sovrascrivere quelli locali?',function(){
+      loadFromCloud();
+    },'Carica');
+  };
   document.getElementById('s-rst').onclick=resetData;
   document.getElementById('s-brd').onclick=function(){renderBrd();openModal('brd');};
 }
@@ -1878,6 +1919,51 @@ function uploadToDrive(filename,dataUrl,scriptUrl,pwd,cb){
     else{toast('⚠️ Drive non disponibile — uso locale');cb(dataUrl);}
   })
   .catch(function(){toast('⚠️ Errore rete — uso locale');cb(dataUrl);});
+}
+
+// ═══ CLOUD SYNC ═══════════════════════════════════════════════════
+function setCloudStatus(state, msg){
+  // state: 'ok' | 'err' | 'loading' | 'hidden'
+  var wrap=document.getElementById('cloud-status');
+  var dot=document.getElementById('cloud-dot');
+  var txt=document.getElementById('cloud-txt');
+  if(state==='hidden'){wrap.style.display='none';return;}
+  wrap.style.display='flex';
+  txt.textContent=msg||'';
+  if(state==='ok'){dot.style.background='#4CAF50';dot.style.animation='';}
+  else if(state==='err'){dot.style.background='#F44336';dot.style.animation='';}
+  else{dot.style.background='#F5A623';dot.style.animation='pulse 0.6s infinite';}
+}
+
+function loadFromCloud(onSuccess, onError){
+  var url=localStorage.getItem('sca_script_url')||'';
+  if(!url){if(onError)onError('Nessun URL configurato');return;}
+  setCloudStatus('loading','Sincronizzazione...');
+  toast('⏳ Caricamento da Cloud...');
+  fetch(url+'?action=load')
+    .then(function(r){return r.json();})
+    .then(function(res){
+      if(res.ok&&res.data){
+        var d=res.data;
+        S.brands=d.brands||[];S.subgroups=d.subgroups||[];
+        S.groups=d.groups||[];S.accessories=d.accessories||[];
+        S.brand_accessories=d.brand_accessories||[];
+        if(!S.cur.brand&&S.brands.length)S.cur.brand=S.brands[0].id;
+        save();render();
+        setCloudStatus('ok','☁️ Sincronizzato');
+        toast('✅ Dati caricati dal Cloud');
+        if(onSuccess)onSuccess();
+      }else{
+        setCloudStatus('err','Errore server');
+        toast('Errore: '+((res&&res.error)||'risposta non valida'),'err');
+        if(onError)onError(res&&res.error);
+      }
+    })
+    .catch(function(e){
+      setCloudStatus('err','Offline');
+      toast('Errore di rete: '+e.message,'err');
+      if(onError)onError(e.message);
+    });
 }
 
 // ═══ EXPORT / IMPORT / PUBLISH ════════════════════════════════════
