@@ -235,11 +235,37 @@ body:not(.is-admin) .d-photo:hover::after{display:none!important}
 .sw:hover,.sw.on{border-color:#000;transform:scale(1.12)}
 
 /* ── TOAST ── */
-.toast{position:fixed;bottom:22px;right:22px;background:var(--navy);color:#fff;
-  padding:10px 18px;border-radius:8px;font-size:13px;z-index:999;
-  transform:translateY(80px);transition:.3s;box-shadow:0 4px 16px #0005;pointer-events:none}
-.toast.show{transform:translateY(0)}
-.toast.ok{background:var(--green)}.toast.err{background:var(--red)}
+.toast{
+  position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(120px);
+  background:var(--navy);color:#fff;padding:13px 28px;border-radius:40px;
+  font-size:13px;font-weight:600;z-index:9998;transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 8px 32px #0006;pointer-events:none;white-space:nowrap;
+  display:flex;align-items:center;gap:10px;letter-spacing:.01em}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--green)}
+.toast.err{background:var(--red)}
+.toast::before{content:'';width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5);flex-shrink:0}
+.toast.ok::before{background:rgba(255,255,255,.6)}
+.toast.err::before{background:rgba(255,255,255,.6)}
+
+/* ── LOADING SCREEN ── */
+#loading-screen{position:fixed;inset:0;background:var(--navy);z-index:9990;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity .4s ease;opacity:1}
+#loading-screen.hidden{opacity:0;pointer-events:none}
+#loading-screen.gone{display:none}
+.ls-logo{font-size:28px;font-weight:900;color:#fff;margin-bottom:6px;letter-spacing:-.5px}
+.ls-logo em{color:#4CA0E8;font-style:normal}
+.ls-gear-wrap{position:relative;width:90px;height:90px;margin:28px 0 24px}
+.ls-gear{animation:spin-gear 1.4s linear infinite;transform-origin:center}
+.ls-gear-inner{animation:spin-gear 1.4s linear infinite reverse;transform-origin:center}
+@keyframes spin-gear{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.ls-msg{font-size:14px;color:#7090B0;font-weight:500;letter-spacing:.02em;text-align:center}
+.ls-sub{font-size:11px;color:#3a5a7a;margin-top:6px;text-align:center}
+.ls-bar-wrap{width:200px;height:3px;background:#0d2540;border-radius:3px;margin-top:20px;overflow:hidden}
+.ls-bar{height:100%;background:linear-gradient(90deg,#1460B8,#4CA0E8);border-radius:3px;
+  animation:loading-bar 1.8s ease-in-out infinite}
+@keyframes loading-bar{0%{width:0%;margin-left:0}60%{width:80%;margin-left:0}100%{width:100%;margin-left:100%}}
 .empty{text-align:center;padding:60px 20px;color:var(--dg)}
 .scard{background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 5px #0001}
 /* ── MODALITÀ USER (sola lettura) ── */
@@ -267,6 +293,29 @@ body:not(.is-admin) .dbox-clickable .dbox-in::after{display:none!important}
 </style>
 </head>
 <body>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+  <div class="ls-logo">S<em>&</em>CURITY</div>
+  <div style="font-size:11px;color:#4a6a8a;letter-spacing:1px">COMPATIBILITÀ ACCESSORI</div>
+  <div class="ls-gear-wrap">
+    <svg viewBox="0 0 90 90" width="90" height="90" xmlns="http://www.w3.org/2000/svg">
+      <!-- Ingranaggio esterno -->
+      <g class="ls-gear">
+        <path fill="#1460B8" d="M45 18a4 4 0 0 1 4 4v2.5a16.5 16.5 0 0 1 5.8 2.4l1.8-1.8a4 4 0 0 1 5.6 5.7l-1.8 1.8A16.5 16.5 0 0 1 62.9 39H65a4 4 0 0 1 0 8h-2.1a16.5 16.5 0 0 1-2.4 5.8l1.8 1.8a4 4 0 0 1-5.6 5.6l-1.8-1.8A16.5 16.5 0 0 1 49 60.9V63a4 4 0 0 1-8 0v-2.1a16.5 16.5 0 0 1-5.8-2.4l-1.8 1.8a4 4 0 0 1-5.6-5.6l1.8-1.8A16.5 16.5 0 0 1 27.1 47H25a4 4 0 0 1 0-8h2.1a16.5 16.5 0 0 1 2.4-5.8l-1.8-1.8a4 4 0 0 1 5.6-5.7l1.8 1.8A16.5 16.5 0 0 1 41 24.5V22a4 4 0 0 1 4-4zm0 19a8 8 0 1 0 0 16 8 8 0 0 0 0-16z" opacity=".9"/>
+      </g>
+      <!-- Cerchio centrale fisso -->
+      <circle cx="45" cy="45" r="5" fill="#4CA0E8" opacity=".7"/>
+      <!-- Ingranaggio piccolo -->
+      <g class="ls-gear-inner" style="transform-origin:68px 24px">
+        <path fill="#4CA0E8" d="M68 16a2.5 2.5 0 0 1 2.5 2.5v1.2a8 8 0 0 1 2.2 1.3l1.1-.6a2.5 2.5 0 0 1 2.5 4.3l-1.1.6a8 8 0 0 1 .2 2.2l1.1.6a2.5 2.5 0 0 1-2.5 4.3l-1.1-.6A8 8 0 0 1 70.5 33v1.3a2.5 2.5 0 0 1-5 0V33a8 8 0 0 1-2.2-1.3l-1.1.6a2.5 2.5 0 0 1-2.5-4.3l1.1-.6a8 8 0 0 1-.2-2.2l-1.1-.6A2.5 2.5 0 0 1 62 20.2l1.1.6A8 8 0 0 1 65.5 19.5V18.5A2.5 2.5 0 0 1 68 16zm0 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" opacity=".8"/>
+      </g>
+    </svg>
+  </div>
+  <div class="ls-msg" id="ls-msg">Connessione in corso...</div>
+  <div class="ls-sub" id="ls-sub">Recupero dati dal server</div>
+  <div class="ls-bar-wrap"><div class="ls-bar"></div></div>
+</div>
 
 <!-- SCHERMATA INIZIALE: scelta User/Admin -->
 <div id="login-screen">
@@ -585,6 +634,8 @@ var _gPhoto='',_aPhoto='';
 
 // ═══ LOGIN ════════════════════════════════════════════════════════
 function initLogin(){
+  // Nasconde loading screen e mostra schermata di scelta
+  hideLoadingScreen();
   // Bottone Utente: accesso diretto sola lettura
   document.getElementById('btn-enter-user').onclick=function(){
     enterUserMode();
@@ -630,7 +681,8 @@ function enterUserMode(){
   // Nascondi cloud-status admin
   var csa=document.getElementById('cloud-status');
   if(csa)csa.style.display='none';
-  // Carica dati dal Cloud
+  // Mostra loading e carica dati dal Cloud
+  showLoadingScreen('Accesso come Utente...','Connessione al server in corso');
   loadDataForUser();
 }
 
@@ -699,12 +751,7 @@ function initAdminData(){
   var isEmpty=!S.brands.length||
     (S.brands.length<=1&&!S.groups.length&&!S.accessories.length&&!S.brand_accessories.length);
   if(isEmpty&&SCRIPT_URL){
-    document.getElementById('main').innerHTML=
-      '<div style="text-align:center;padding:80px 20px;color:var(--dg)">'+
-      '<div style="font-size:40px;margin-bottom:12px">☁️</div>'+
-      '<p style="font-size:15px;font-weight:600;color:var(--navy)">Sincronizzazione dati dal Cloud...</p>'+
-      '<p style="font-size:12px;margin-top:6px">Primo avvio su questo dispositivo</p>'+
-      '</div>';
+    showLoadingScreen('Sincronizzazione dal Cloud...','Primo avvio su questo dispositivo');
     loadFromCloud(
       function(){setCloudStatus('ok','☁️ Pronto');},
       function(){setCloudStatus('err','Errore Cloud');render();}
@@ -2075,8 +2122,26 @@ function uploadToDrive(filename,dataUrl,scriptUrl,pwd,cb){
 }
 
 // ═══ USER MODE: carica dati dal Cloud ════════════════════════════
+// ═══ LOADING SCREEN ═══════════════════════════════════════════════
+function showLoadingScreen(msg, sub){
+  var ls=document.getElementById('loading-screen');
+  if(!ls)return;
+  ls.classList.remove('hidden','gone');
+  ls.style.opacity='1';
+  ls.style.pointerEvents='all';
+  if(msg)document.getElementById('ls-msg').textContent=msg;
+  if(sub)document.getElementById('ls-sub').textContent=sub||'';
+}
+function hideLoadingScreen(){
+  var ls=document.getElementById('loading-screen');
+  if(!ls)return;
+  ls.classList.add('hidden');
+  setTimeout(function(){ls.classList.add('gone');},450);
+}
+
 function loadDataForUser(){
   if(!SCRIPT_URL){
+    hideLoadingScreen();
     document.getElementById('main').innerHTML=
       '<div style="text-align:center;padding:80px 20px">'+
       '<div style="font-size:48px;margin-bottom:16px">⚙️</div>'+
@@ -2086,6 +2151,7 @@ function loadDataForUser(){
     setConnStatus(false,'Non configurato');
     return;
   }
+  showLoadingScreen('Connessione al server...','Recupero dati in corso');
   setConnStatus(null,'Connessione...');
   fetch(SCRIPT_URL+'?action=load')
     .then(function(r){return r.json();})
@@ -2099,13 +2165,16 @@ function loadDataForUser(){
         S.cur={brand:null,sg:null,group:null,section:'home'};
         if(S.brands.length)S.cur.brand=S.brands[0].id;
         setConnStatus(true,'☁️ Dati aggiornati');
+        hideLoadingScreen();
         render();
       }else{
+        hideLoadingScreen();
         setConnStatus(false,'Errore server');
         showUserError('⚠️ '+(res.error||'Risposta non valida dal server'));
       }
     })
     .catch(function(){
+      hideLoadingScreen();
       setConnStatus(false,'Offline');
       showUserError('📴 Impossibile connettersi al server');
     });
@@ -2166,7 +2235,7 @@ function loadFromCloud(onSuccess, onError){
         // Resetta navigazione a stato pulito dopo sync Cloud
         S.cur={brand:null,sg:null,group:null,section:'home'};
         if(S.brands.length)S.cur.brand=S.brands[0].id;
-        save();render();
+        save();hideLoadingScreen();render();
         setCloudStatus('ok','☁️ Sincronizzato');
         toast('✅ Dati caricati dal Cloud');
         if(onSuccess)onSuccess();
