@@ -675,6 +675,8 @@ function enterUserMode(){
   // Reset stato navigazione e ricerche
   window._sgq='';window._aq='';window._baq='';
   S.cur={brand:null,sg:null,group:null,section:'home'};
+  // Nascondi esplicitamente elementi admin via JS (certezza assoluta)
+  document.getElementById('nav-set').style.display='none';
   // Mostra indicatore connessione
   var cs=document.getElementById('conn-status');
   if(cs)cs.style.display='flex';
@@ -690,6 +692,8 @@ function enterAdminMode(){
   IS_ADMIN=true;
   document.body.classList.add('is-admin');
   document.getElementById('tb-mode-label').textContent='Admin';
+  // Mostra esplicitamente elementi admin via JS (certezza assoluta)
+  document.getElementById('nav-set').style.display='flex';
   // Nasconde indicatore connessione Cloud (non rilevante in admin mode)
   var cs=document.getElementById('conn-status');
   if(cs)cs.style.display='none';
@@ -1459,6 +1463,7 @@ function renderSettings(m){
     '<button class="btn bs" id="s-imp">📂 Importa JSON</button>'+
     '<button class="btn bg" id="s-pub">☁️ Configura & Pubblica</button>'+
     '<button class="btn bo" id="s-load">📥 Carica da Cloud</button>'+
+    '<button class="btn bs" id="s-verify">🔍 Verifica connessione Cloud</button>'+
     '<button class="btn bd" id="s-rst">⚠️ Reset dati originali</button>'+
     '</div>'+
     (localStorage.getItem('sca_script_url')?
@@ -1484,6 +1489,28 @@ function renderSettings(m){
     askConfirm('Scaricare i dati dal Cloud e sovrascrivere quelli locali?',function(){
       loadFromCloud();
     },'Carica');
+  };
+  document.getElementById('s-verify').onclick=function(){
+    var url=localStorage.getItem('sca_script_url')||'';
+    if(!url){toast('Nessun URL configurato','err');return;}
+    toast('⏳ Verifica in corso...');
+    fetch(url+'?action=load')
+      .then(function(r){return r.json();})
+      .then(function(res){
+        if(res.ok){
+          var d=res.data||{};
+          toast('✅ Cloud OK — '+
+            (d.brands||[]).length+' marchi, '+
+            (d.groups||[]).length+' gruppi, '+
+            (d.accessories||[]).length+' acc. generali, '+
+            (d.brand_accessories||[]).length+' acc. marchio');
+          setCloudStatus('ok','☁️ Online');
+        }else{
+          toast('⚠️ Cloud risponde ma con errore: '+(res.error||'?'),'err');
+          setCloudStatus('err','Errore Cloud');
+        }
+      })
+      .catch(function(e){toast('❌ Impossibile raggiungere il Cloud: '+e.message,'err');setCloudStatus('err','Offline');});
   };
   document.getElementById('s-rst').onclick=resetData;
   document.getElementById('s-brd').onclick=function(){renderBrd();openModal('brd');};
@@ -2312,8 +2339,25 @@ function publishData(skipConfirm){
   fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)})
   .then(function(r){return r.text();})
   .then(function(txt){
-    try{var res=JSON.parse(txt);if(res&&res.ok)toast('✅ Dati pubblicati');else toast('Errore: '+((res&&res.error)||'?'),'err');}
-    catch(e){if(txt&&txt.length>0)toast('✅ Dati inviati');else toast('Risposta vuota','err');}
+    try{
+      var res=JSON.parse(txt);
+      if(res&&res.ok){
+        toast('✅ Dati pubblicati sul Cloud');
+        localStorage.setItem('sca_last_publish',new Date().toISOString());
+        setCloudStatus('ok','☁️ Pubblicato');
+      }else{
+        toast('Errore pubblicazione: '+((res&&res.error)||'risposta non valida'),'err');
+        setCloudStatus('err','Errore Cloud');
+      }
+    }catch(e){
+      if(txt&&txt.length>0){
+        toast('✅ Dati inviati al Cloud');
+        setCloudStatus('ok','☁️ Inviato');
+      }else{
+        toast('Risposta vuota dal server','err');
+        setCloudStatus('err','Errore risposta');
+      }
+    }
   })
   .catch(function(e){toast('Errore: '+e.message,'err');});
 }
