@@ -247,9 +247,8 @@ body:not(.is-admin) .d-photo:hover::after{display:none!important}
 body.is-admin .admin-only{display:inline-flex!important}
 body.is-admin .admin-only-block{display:block!important}
 .admin-only-block{display:none!important}
-body.is-admin .admin-only-flex{display:flex!important}
-body:not(.is-admin) .admin-only-flex{display:none!important}
-.admin-only-flex{display:none!important}
+body.is-admin .sb-item.admin-only-flex{display:flex!important}
+body:not(.is-admin) .sb-item.admin-only-flex{display:none!important}
 body.is-admin .user-only{display:none!important}
 .user-only{display:flex}
 /* In modalità user niente hover "doppio clic per modificare" */
@@ -733,7 +732,7 @@ function save(){
 // ═══ BIND ═════════════════════════════════════════════════════════
 function bindStatic(){
   document.getElementById('nav-acc').onclick=function(){nav('acc');};
-  if(IS_ADMIN)document.getElementById('nav-set').onclick=function(){nav('set');};
+  document.getElementById('nav-set').onclick=function(){nav('set');};
   document.getElementById('btn-brands').onclick=function(){renderBrd();openModal('brd');};
   document.getElementById('btn-exp').onclick=exportData;
   document.getElementById('btn-pub').onclick=publishData;
